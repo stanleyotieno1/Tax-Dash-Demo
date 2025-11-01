@@ -1,4 +1,3 @@
-
 // Variables
 $primary-color: #6C5CE7;
 $primary-dark: #5F4FD1;
@@ -58,7 +57,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   bottom: 0;
   background: rgba(45, 52, 54, 0.75);
   @include flex-center;
-  z-index: 9999;
+  z-index: 10000;
   animation: fadeIn 0.25s ease-out;
   backdrop-filter: blur(8px);
   padding: 20px;
@@ -72,6 +71,8 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: slideUpScale 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
     transform-origin: center;
+    position: relative;
+    z-index: 10001;
 
     .dialog-header {
       padding: 28px 28px 20px;
@@ -105,7 +106,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       max-height: 450px;
       overflow-y: auto;
 
-      // Custom scrollbar
       &::-webkit-scrollbar {
         width: 6px;
       }
@@ -133,7 +133,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         font-size: 15px;
       }
 
-      // For JSON/code display
       pre {
         background: $bg-light;
         padding: 16px;
@@ -203,7 +202,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
     }
 
-    // Dialog Type-Specific Styles
     &.info {
       .dialog-header .dialog-icon {
         background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, rgba(162, 155, 254, 0.15) 100%);
@@ -309,7 +307,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 
-    // Animated background effect
     &::before {
       content: '';
       position: absolute;
@@ -468,6 +465,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       background: linear-gradient(135deg, rgba(108, 92, 231, 0.02) 0%, rgba(162, 155, 254, 0.02) 100%);
       opacity: 0;
       transition: $transition;
+      pointer-events: none;
     }
 
     &:hover,
@@ -489,6 +487,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     .upload-icon {
       margin-bottom: 24px;
+      position: relative;
 
       i {
         font-size: 68px;
@@ -505,6 +504,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       color: $text-dark;
       margin-bottom: 12px;
       letter-spacing: -0.2px;
+      position: relative;
     }
 
     .or-text {
@@ -514,6 +514,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 1px;
+      position: relative;
     }
 
     .browse-btn {
@@ -531,6 +532,8 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 6px 20px rgba(108, 92, 231, 0.3);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      position: relative;
+      z-index: 1;
 
       i {
         font-size: 17px;
@@ -547,7 +550,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Analyze Button
   .analyze-btn {
     @include flex-center;
     gap: 14px;
@@ -608,7 +610,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Allowed Formats Card
   .allowed-formats {
     background: $bg-white;
     border-radius: $border-radius-lg;
@@ -702,7 +703,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
   border: 1px solid rgba(108, 92, 231, 0.08);
 
-  // Enhanced scrollbar
   &::-webkit-scrollbar {
     width: 10px;
   }
@@ -747,7 +747,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Files List
   .files-list {
     display: flex;
     flex-direction: column;
@@ -902,7 +901,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
         }
 
-        // Progress Container
         .progress-container {
           display: flex;
           align-items: center;
@@ -945,8 +943,7 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 );
                 background-size: 200% 100%;
                 animation: analyzing-gradient 2s ease-in-out infinite;
-                box-shadow: 0 0 16px rgba
-                (108, 92, 231, 0.6);
+                box-shadow: 0 0 16px rgba(108, 92, 231, 0.6);
               }
             }
           }
@@ -964,7 +961,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
         }
 
-        // Status
         .file-status {
           display: flex;
           align-items: center;
@@ -1079,7 +1075,6 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Empty State
   .empty-state {
     @include flex-center;
     flex-direction: column;

@@ -1,12 +1,38 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
 from sqlalchemy import select, delete
 from database import engine, UploadedFile as DBUploadedFile
 from services import extract_from_pdf
+from websocket_manager import manager
 from datetime import datetime
 import json
 import asyncio
+from typing import List
 
 router = APIRouter()
+
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time updates
+    """
+    await manager.connect(websocket)
+    try:
+        # Keep connection alive and listen for messages
+        while True:
+            # Wait for any message from client (ping/pong to keep alive)
+            data = await websocket.receive_text()
+            
+            # Optional: Handle client messages
+            if data == "ping":
+                await websocket.send_text(json.dumps({"type": "pong"}))
+                
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        print("Client disconnected")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+        manager.disconnect(websocket)
 
 
 @router.post("/upload")
@@ -40,6 +66,17 @@ async def upload_file(file: UploadFile = File(...)):
             ).first()
             
             if result:
+                # Notify via WebSocket
+                await manager.send_file_status(
+                    file_id=result.id,
+                    status="pending",
+                    data={
+                        "filename": result.filename,
+                        "file_size": result.file_size,
+                        "upload_time": result.upload_time.isoformat()
+                    }
+                )
+                
                 return {
                     "id": result.id,
                     "filename": result.filename,
@@ -54,10 +91,124 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/analyze-all")
-async def analyze_all_pending():
+async def process_single_file(file_id: int, file_content: bytes, filename: str):
     """
-    Analyze all pending files with MAXIMUM 5 second processing time
+    Background task to process a single file with WebSocket updates
+    """
+    try:
+        print(f"🔍 Starting extraction for file {file_id}: {filename}")
+        
+        # Update to analyzing
+        with engine.connect() as conn:
+            conn.execute(
+                DBUploadedFile.__table__.update()
+                .where(DBUploadedFile.__table__.c.id == file_id)
+                .values(status="analyzing")
+            )
+            conn.commit()
+        
+        # Notify WebSocket
+        await manager.send_file_status(
+            file_id=file_id,
+            status="analyzing",
+            data={"filename": filename, "message": "Starting analysis..."}
+        )
+        await manager.send_analysis_progress(file_id, 10, "Initializing...")
+        
+        # Extract data with timeout
+        try:
+            await manager.send_analysis_progress(file_id, 30, "Extracting text from PDF...")
+            
+            extracted = await asyncio.wait_for(
+                asyncio.to_thread(extract_from_pdf, file_content),
+                timeout=120.0  # 2 minutes max
+            )
+            
+            await manager.send_analysis_progress(file_id, 80, "Processing with AI...")
+            
+        except asyncio.TimeoutError:
+            print(f"⏱️ Timeout for file {file_id}")
+            extracted = {
+                "success": False,
+                "error": "Processing timeout (exceeded 2 minutes)"
+            }
+        
+        # Update database with results
+        with engine.connect() as conn:
+            if extracted.get("success", False):
+                print(f"✅ Successfully extracted data for file {file_id}")
+                
+                await manager.send_analysis_progress(file_id, 100, "Analysis complete!")
+                
+                conn.execute(
+                    DBUploadedFile.__table__.update()
+                    .where(DBUploadedFile.__table__.c.id == file_id)
+                    .values(
+                        status="completed",
+                        extracted_data=json.dumps(extracted.get("data", {}))
+                    )
+                )
+                
+                # Notify completion
+                await manager.send_file_status(
+                    file_id=file_id,
+                    status="completed",
+                    data={
+                        "filename": filename,
+                        "extracted_data": extracted.get("data", {}),
+                        "message": "Analysis completed successfully!"
+                    }
+                )
+            else:
+                print(f"❌ Failed to extract data for file {file_id}: {extracted.get('error')}")
+                
+                conn.execute(
+                    DBUploadedFile.__table__.update()
+                    .where(DBUploadedFile.__table__.c.id == file_id)
+                    .values(
+                        status="failed",
+                        error_message=extracted.get("error", "Analysis failed")
+                    )
+                )
+                
+                # Notify failure
+                await manager.send_file_status(
+                    file_id=file_id,
+                    status="failed",
+                    data={
+                        "filename": filename,
+                        "error": extracted.get("error", "Analysis failed")
+                    }
+                )
+            
+            conn.commit()
+        
+        print(f"✅ Finished processing file {file_id}")
+        
+    except Exception as e:
+        print(f"❌ Error processing file {file_id}: {e}")
+        
+        with engine.connect() as conn:
+            conn.execute(
+                DBUploadedFile.__table__.update()
+                .where(DBUploadedFile.__table__.c.id == file_id)
+                .values(status="failed", error_message=str(e))
+            )
+            conn.commit()
+        
+        # Notify error
+        await manager.send_file_status(
+            file_id=file_id,
+            status="failed",
+            data={"filename": filename, "error": str(e)}
+        )
+
+
+@router.post("/analyze-all")
+async def analyze_all_pending(background_tasks: BackgroundTasks):
+    """
+    Start analyzing all pending files in background
+    Returns immediately with file IDs being processed
     """
     try:
         # Get all pending files
@@ -70,105 +221,30 @@ async def analyze_all_pending():
             return {
                 "success": False,
                 "message": "No pending files to analyze",
-                "analyzed_count": 0
+                "processing_count": 0,
+                "file_ids": []
             }
         
-        analyzed_count = 0
-        failed_count = 0
-        results = []
-        
-        # Process files with timeout
+        # Add all files to background processing
+        file_ids = []
         for file in pending_files:
-            try:
-                # Update to analyzing
-                with engine.connect() as conn:
-                    conn.execute(
-                        DBUploadedFile.__table__.update()
-                        .where(DBUploadedFile.__table__.c.id == file.id)
-                        .values(status="analyzing")
-                    )
-                    conn.commit()
-                
-                # Create task with timeout
-                async def analyze_with_timeout():
-                    # Run extraction in background (won't block)
-                    return extract_from_pdf(file.file_content)
-                
-                # Wait max 5 seconds per file
-                try:
-                    extracted = await asyncio.wait_for(
-                        asyncio.to_thread(extract_from_pdf, file.file_content),
-                        timeout=5.0
-                    )
-                except asyncio.TimeoutError:
-                    # If timeout, mark as completed anyway for demo
-                    extracted = {
-                        "success": True,
-                        "data": {
-                            "invoice_number": "Processing...",
-                            "date": None,
-                            "vendor": None,
-                            "total_amount": None,
-                            "currency": None
-                        }
-                    }
-                
-                # Update with results
-                with engine.connect() as conn:
-                    if extracted.get("success", False):
-                        conn.execute(
-                            DBUploadedFile.__table__.update()
-                            .where(DBUploadedFile.__table__.c.id == file.id)
-                            .values(
-                                status="completed",
-                                extracted_data=json.dumps(extracted.get("data", {}))
-                            )
-                        )
-                        analyzed_count += 1
-                    else:
-                        conn.execute(
-                            DBUploadedFile.__table__.update()
-                            .where(DBUploadedFile.__table__.c.id == file.id)
-                            .values(
-                                status="failed",
-                                error_message=extracted.get("error", "Analysis failed")
-                            )
-                        )
-                        failed_count += 1
-                    conn.commit()
-                
-                results.append({
-                    "id": file.id,
-                    "filename": file.filename,
-                    "status": "completed" if extracted.get("success") else "failed"
-                })
-            
-            except Exception as e:
-                print(f"Error analyzing file {file.id}: {e}")
-                # Mark as failed
-                with engine.connect() as conn:
-                    conn.execute(
-                        DBUploadedFile.__table__.update()
-                        .where(DBUploadedFile.__table__.c.id == file.id)
-                        .values(status="failed", error_message=str(e))
-                    )
-                    conn.commit()
-                
-                failed_count += 1
-                results.append({
-                    "id": file.id,
-                    "filename": file.filename,
-                    "status": "failed",
-                    "error": str(e)
-                })
+            file_ids.append(file.id)
+            # Add to background tasks (non-blocking)
+            background_tasks.add_task(
+                process_single_file,
+                file.id,
+                file.file_content,
+                file.filename
+            )
+        
+        print(f"🚀 Started background processing for {len(file_ids)} files")
         
         return {
             "success": True,
-            "message": f"Analysis completed! {analyzed_count} file(s) analyzed successfully.",
-            "analyzed_count": analyzed_count,
-            "failed_count": failed_count,
-            "total_processed": len(pending_files),
-            "results": results
+            "message": f"Started processing {len(file_ids)} file(s). Check status for updates.",
+            "processing_count": len(file_ids),
+            "file_ids": file_ids,
+            "estimated_time_seconds": len(file_ids) * 30
         }
     
     except Exception as e:
@@ -178,9 +254,7 @@ async def analyze_all_pending():
 
 @router.get("/files")
 async def get_all_files():
-    """
-    Get all uploaded files
-    """
+    """Get all uploaded files"""
     try:
         with engine.connect() as conn:
             result = conn.execute(
@@ -214,53 +288,11 @@ async def get_all_files():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/files/{file_id}")
-async def get_file(file_id: int):
-    """
-    Get specific file by ID
-    """
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(
-                select(DBUploadedFile).where(DBUploadedFile.id == file_id)
-            ).first()
-            
-            if not result:
-                raise HTTPException(status_code=404, detail="File not found")
-            
-            extracted_data = None
-            if result.extracted_data:
-                try:
-                    extracted_data = json.loads(result.extracted_data)
-                except:
-                    extracted_data = None
-            
-            return {
-                "id": result.id,
-                "filename": result.filename,
-                "file_size": result.file_size,
-                "file_type": result.file_type,
-                "status": result.status,
-                "upload_time": result.upload_time.isoformat() if result.upload_time else None,
-                "extracted_data": extracted_data,
-                "error_message": result.error_message
-            }
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Get file error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.delete("/files/{file_id}")
 async def delete_file(file_id: int):
-    """
-    Delete file from database
-    """
+    """Delete file from database"""
     try:
         with engine.connect() as conn:
-            # Check if file exists
             result = conn.execute(
                 select(DBUploadedFile).where(DBUploadedFile.id == file_id)
             ).first()
@@ -268,11 +300,17 @@ async def delete_file(file_id: int):
             if not result:
                 raise HTTPException(status_code=404, detail="File not found")
             
-            # Delete the file
             conn.execute(
                 delete(DBUploadedFile).where(DBUploadedFile.id == file_id)
             )
             conn.commit()
+            
+            # Notify deletion
+            await manager.send_file_status(
+                file_id=file_id,
+                status="deleted",
+                data={"filename": result.filename}
+            )
             
             return {"message": "File deleted successfully", "id": file_id}
     

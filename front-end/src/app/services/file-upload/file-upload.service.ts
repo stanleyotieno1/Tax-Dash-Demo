@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpEvent, HttpEventType } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export interface ExtractedData {
@@ -11,36 +11,14 @@ export interface ExtractedData {
   currency: string | null;
 }
 
-export interface UploadResponse {
-  id: number;
-  filename: string;
-  file_size: number;
-  status: string;
-  upload_time: string;
-  message: string;
-}
-
-export interface AnalyzeResponse {
-  id: number;
-  status: string;
-  extracted: {
-    success: boolean;
-    data?: ExtractedData;
-    error?: string;
-    raw_text_preview?: string;
-  };
-  message: string;
-}
-
-export interface FileRecord {
-  id: number;
-  filename: string;
-  file_size: number;
-  file_type: string;
-  status: string;
-  upload_time: string;
-  extracted_data: ExtractedData | null;
-  error_message: string | null;
+export interface WebSocketMessage {
+  type: 'file_status' | 'analysis_progress' | 'pong';
+  file_id?: number;
+  status?: string;
+  progress?: number;
+  message?: string;
+  data?: any;
+  timestamp?: number;
 }
 
 @Injectable({
@@ -48,24 +26,100 @@ export interface FileRecord {
 })
 export class FileUploadService {
   private apiUrl = 'http://localhost:8000/api';
+  private wsUrl = 'ws://localhost:8000/api/ws';
+  
+  private websocket: WebSocket | null = null;
+  private messageSubject = new Subject<WebSocketMessage>();
+  public messages$ = this.messageSubject.asObservable();
+  
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 3000;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.connectWebSocket();
+  }
 
   /**
-   * Upload file WITHOUT extraction (just store it)
+   * Connect to WebSocket
    */
-  uploadFile(file: File): Observable<{progress: number, response?: UploadResponse}> {
+  connectWebSocket(): void {
+    if (this.websocket?.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connected');
+      return;
+    }
+
+    console.log('🔌 Connecting to WebSocket...');
+    this.websocket = new WebSocket(this.wsUrl);
+
+    this.websocket.onopen = () => {
+      console.log('✅ WebSocket connected');
+      this.reconnectAttempts = 0;
+      
+      // Send ping every 30 seconds to keep connection alive
+      setInterval(() => {
+        if (this.websocket?.readyState === WebSocket.OPEN) {
+          this.websocket.send('ping');
+        }
+      }, 30000);
+    };
+
+    this.websocket.onmessage = (event) => {
+      try {
+        const message: WebSocketMessage = JSON.parse(event.data);
+        console.log('📨 WebSocket message:', message);
+        this.messageSubject.next(message);
+      } catch (error) {
+        console.error('Failed to parse WebSocket message:', error);
+      }
+    };
+
+    this.websocket.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+    };
+
+    this.websocket.onclose = () => {
+      console.log('🔌 WebSocket disconnected');
+      this.attemptReconnect();
+    };
+  }
+
+  /**
+   * Attempt to reconnect WebSocket
+   */
+  private attemptReconnect(): void {
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.reconnectAttempts++;
+      console.log(`🔄 Reconnecting... Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+      
+      setTimeout(() => {
+        this.connectWebSocket();
+      }, this.reconnectDelay);
+    } else {
+      console.error('❌ Max reconnection attempts reached');
+    }
+  }
+
+  /**
+   * Disconnect WebSocket
+   */
+  disconnectWebSocket(): void {
+    if (this.websocket) {
+      this.websocket.close();
+      this.websocket = null;
+    }
+  }
+
+  // ... (keep all existing HTTP methods: uploadFile, analyzeAllFiles, getAllFiles, etc.)
+  
+  uploadFile(file: File): Observable<{progress: number, response?: any}> {
     const formData = new FormData();
     formData.append('file', file);
 
-    return this.http.post<UploadResponse>(
-      `${this.apiUrl}/upload`,
-      formData,
-      {
-        reportProgress: true,
-        observe: 'events'
-      }
-    ).pipe(
+    return this.http.post(`${this.apiUrl}/upload`, formData, {
+      reportProgress: true,
+      observe: 'events'
+    }).pipe(
       map((event: HttpEvent<any>) => {
         if (event.type === HttpEventType.UploadProgress) {
           const progress = event.total 
@@ -80,43 +134,15 @@ export class FileUploadService {
     );
   }
 
-  /**
-   * Analyze a specific file (triggers extraction)
-   */
-  analyzeFile(fileId: number): Observable<AnalyzeResponse> {
-    return this.http.post<AnalyzeResponse>(
-      `${this.apiUrl}/analyze/${fileId}`,
-      {}
-    );
-  }
-
-  /**
-   * Analyze all pending files at once
-   */
   analyzeAllFiles(): Observable<any> {
     return this.http.post(`${this.apiUrl}/analyze-all`, {});
   }
 
-  /**
-   * Get all uploaded files
-   */
-  getAllFiles(): Observable<{ files: FileRecord[] }> {
-    return this.http.get<{ files: FileRecord[] }>(`${this.apiUrl}/files`);
+  getAllFiles(): Observable<{ files: any[] }> {
+    return this.http.get<{ files: any[] }>(`${this.apiUrl}/files`);
   }
 
-  /**
-   * Get specific file by ID
-   */
-  getFile(fileId: number): Observable<FileRecord> {
-    return this.http.get<FileRecord>(`${this.apiUrl}/files/${fileId}`);
-  }
-
-  /**
-   * Delete file
-   */
-  deleteFile(fileId: number): Observable<{ message: string, id: number }> {
-    return this.http.delete<{ message: string, id: number }>(
-      `${this.apiUrl}/files/${fileId}`
-    );
+  deleteFile(fileId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/files/${fileId}`);
   }
 }
