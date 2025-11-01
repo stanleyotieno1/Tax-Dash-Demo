@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -25,7 +25,7 @@ interface UploadedFile {
   templateUrl: './file-upload.html',
   styleUrls: ['./file-upload.scss']
 })
-export class FileUpLoad implements OnInit {
+export class FileUpLoad implements OnInit, OnDestroy {
   uploadedFiles: UploadedFile[] = [];
   isDragging = false;
   allowedFormats = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv'];
@@ -34,6 +34,16 @@ export class FileUpLoad implements OnInit {
   isAnalyzing = false;
   showAnalysisCard = false;
   analysisComplete = false;
+  analysisMessage = '';
+  
+  // Custom dialog states
+  showDialog = false;
+  dialogTitle = '';
+  dialogMessage = '';
+  dialogType: 'info' | 'success' | 'error' | 'confirm' = 'info';
+  dialogCallback: (() => void) | null = null;
+  
+  private analysisTimeout: any;
 
   constructor(
     private fileUploadService: FileUploadService,
@@ -41,15 +51,22 @@ export class FileUpLoad implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // IMPORTANT: Load files immediately on component init
+    console.log('Component initialized - Loading files...');
+    // CRITICAL: Load files immediately
     this.loadUploadedFiles();
   }
 
+  ngOnDestroy(): void {
+    if (this.analysisTimeout) {
+      clearTimeout(this.analysisTimeout);
+    }
+  }
+
   loadUploadedFiles(): void {
-    console.log('Loading uploaded files...');
+    console.log('📂 Fetching files from database...');
     this.fileUploadService.getAllFiles().subscribe({
       next: (response) => {
-        console.log('Files loaded:', response.files);
+        console.log('✅ Files received:', response.files.length);
         this.uploadedFiles = response.files.map(f => ({
           id: f.id,
           name: f.filename,
@@ -64,10 +81,16 @@ export class FileUpLoad implements OnInit {
           extractedData: f.extracted_data || undefined,
           errorMessage: f.error_message || undefined
         }));
+        console.log('📊 Uploaded files loaded:', this.uploadedFiles.length);
       },
       error: (error) => {
-        console.error('Error loading files:', error);
-        alert('Failed to load files from database');
+        console.error('❌ Error loading files:', error);
+        this.showDialogBox(
+          'error',
+          'Error Loading Files',
+          `Failed to load files from database: ${error.message || 'Unknown error'}`,
+          null
+        );
       }
     });
   }
@@ -125,13 +148,23 @@ export class FileUpLoad implements OnInit {
 
   validateFile(file: File): boolean {
     if (file.size > this.maxFileSize) {
-      alert(`File "${file.name}" exceeds maximum size of 10MB`);
+      this.showDialogBox(
+        'error',
+        'File Too Large',
+        `File "${file.name}" exceeds maximum size of 10MB`,
+        null
+      );
       return false;
     }
 
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!this.allowedFormats.includes(fileExtension)) {
-      alert(`File format "${fileExtension}" is not allowed. Please upload: ${this.allowedFormats.join(', ')}`);
+      this.showDialogBox(
+        'error',
+        'Invalid File Format',
+        `File format "${fileExtension}" is not allowed. Please upload: ${this.allowedFormats.join(', ')}`,
+        null
+      );
       return false;
     }
 
@@ -149,12 +182,12 @@ export class FileUpLoad implements OnInit {
 
         if (event.response) {
           uploadedFile.id = event.response.id;
-          uploadedFile.status = 'pending'; // File uploaded but not analyzed yet
+          uploadedFile.status = 'pending';
           uploadedFile.uploadTime = new Date(event.response.upload_time).toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit'
           });
-          uploadedFile.progress = 0; // Reset progress for pending state
+          uploadedFile.progress = 0;
         }
       },
       error: (error) => {
@@ -165,21 +198,28 @@ export class FileUpLoad implements OnInit {
     });
   }
 
-  /**
-   * NEW: Analyze all pending files
-   */
   analyzeAllFiles(): void {
     const pendingCount = this.getPendingCount();
     
     if (pendingCount === 0) {
-      alert('No pending files to analyze. Please upload files first.');
+      this.showDialogBox(
+        'info',
+        'No Files to Analyze',
+        'Please upload files first before analyzing.',
+        null
+      );
       return;
     }
 
-    if (!confirm(`Analyze ${pendingCount} pending file(s)?`)) {
-      return;
-    }
+    this.showDialogBox(
+      'confirm',
+      'Confirm Analysis',
+      `Analyze ${pendingCount} pending file(s)?`,
+      () => this.startAnalysis()
+    );
+  }
 
+  private startAnalysis(): void {
     this.isAnalyzing = true;
     this.showAnalysisCard = false;
     this.analysisComplete = false;
@@ -192,27 +232,30 @@ export class FileUpLoad implements OnInit {
         f.progress = 50;
       });
 
-    // Call backend to analyze all
+    // IMPORTANT: Set timeout for 5 seconds
+    this.analysisTimeout = setTimeout(() => {
+      this.completeAnalysis();
+    }, 5000);
+
+    // Call backend
     this.fileUploadService.analyzeAllFiles().subscribe({
       next: (response) => {
-        console.log('Analysis complete:', response);
-        
-        // Reload files to get updated statuses
-        this.loadUploadedFiles();
-        
-        this.isAnalyzing = false;
-        this.analysisComplete = true;
-        this.showAnalysisCard = true;
-
-        // Auto-hide card after 10 seconds
-        setTimeout(() => {
-          this.showAnalysisCard = false;
-        }, 10000);
+        console.log('Analysis response:', response);
+        this.analysisMessage = response.message || 'Analysis completed successfully!';
       },
       error: (error) => {
         console.error('Analysis failed:', error);
+        if (this.analysisTimeout) {
+          clearTimeout(this.analysisTimeout);
+        }
         this.isAnalyzing = false;
-        alert('Analysis failed: ' + (error.message || 'Unknown error'));
+        
+        this.showDialogBox(
+          'error',
+          'Analysis Failed',
+          error.message || 'Unknown error occurred during analysis',
+          null
+        );
         
         // Reset analyzing files to pending
         this.uploadedFiles
@@ -225,23 +268,60 @@ export class FileUpLoad implements OnInit {
     });
   }
 
-  /**
-   * Navigate to risk analysis page
-   */
+  private completeAnalysis(): void {
+    // Reload files to get updated statuses
+    this.fileUploadService.getAllFiles().subscribe({
+      next: (response) => {
+        this.uploadedFiles = response.files.map(f => ({
+          id: f.id,
+          name: f.filename,
+          size: f.file_size,
+          type: f.file_type,
+          status: f.status as any,
+          progress: f.status === 'completed' ? 100 : 0,
+          uploadTime: new Date(f.upload_time).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          extractedData: f.extracted_data || undefined,
+          errorMessage: f.error_message || undefined
+        }));
+
+        this.isAnalyzing = false;
+        this.analysisComplete = true;
+        this.showAnalysisCard = true;
+
+        // Show success dialog
+        this.showDialogBox(
+          'success',
+          'Analysis Complete!',
+          `${this.getCompletedCount()} document(s) analyzed successfully. You can now view the results.`,
+          null
+        );
+      },
+      error: (error) => {
+        console.error('Failed to reload files:', error);
+        this.isAnalyzing = false;
+      }
+    });
+  }
+
   goToRiskAnalysis(): void {
     this.router.navigate(['/risk-analysis']);
   }
 
-  /**
-   * Close analysis card
-   */
   closeAnalysisCard(): void {
     this.showAnalysisCard = false;
   }
 
   retryUpload(file: UploadedFile): void {
     if (!file.file) {
-      alert('Original file not available for retry');
+      this.showDialogBox(
+        'error',
+        'Cannot Retry',
+        'Original file not available for retry',
+        null
+      );
       return;
     }
     
@@ -254,31 +334,49 @@ export class FileUpLoad implements OnInit {
   deleteFile(index: number): void {
     const file = this.uploadedFiles[index];
     
-    if (!confirm('Are you sure you want to delete this file?')) {
-      return;
-    }
-
-    if (file.id) {
-      this.fileUploadService.deleteFile(file.id).subscribe({
-        next: () => {
+    this.showDialogBox(
+      'confirm',
+      'Confirm Delete',
+      `Are you sure you want to delete "${file.name}"?`,
+      () => {
+        if (file.id) {
+          this.fileUploadService.deleteFile(file.id).subscribe({
+            next: () => {
+              this.uploadedFiles.splice(index, 1);
+            },
+            error: (error) => {
+              console.error('Delete failed:', error);
+              this.showDialogBox(
+                'error',
+                'Delete Failed',
+                'Failed to delete file from server',
+                null
+              );
+            }
+          });
+        } else {
           this.uploadedFiles.splice(index, 1);
-        },
-        error: (error) => {
-          console.error('Delete failed:', error);
-          alert('Failed to delete file from server');
         }
-      });
-    } else {
-      this.uploadedFiles.splice(index, 1);
-    }
+      }
+    );
   }
 
   viewFile(file: UploadedFile): void {
     if (file.extractedData) {
       const data = JSON.stringify(file.extractedData, null, 2);
-      alert(`Extracted Data:\n\n${data}`);
+      this.showDialogBox(
+        'info',
+        'Extracted Data',
+        data,
+        null
+      );
     } else {
-      alert('No extracted data available. Please analyze the file first.');
+      this.showDialogBox(
+        'info',
+        'No Data',
+        'No extracted data available. Please analyze the file first.',
+        null
+      );
     }
   }
 
@@ -291,8 +389,43 @@ export class FileUpLoad implements OnInit {
       link.click();
       URL.revokeObjectURL(url);
     } else {
-      alert('File not available for download');
+      this.showDialogBox(
+        'error',
+        'Cannot Download',
+        'File not available for download',
+        null
+      );
     }
+  }
+
+  // Custom Dialog Methods
+  showDialogBox(
+    type: 'info' | 'success' | 'error' | 'confirm',
+    title: string,
+    message: string,
+    callback: (() => void) | null
+  ): void {
+    this.dialogType = type;
+    this.dialogTitle = title;
+    this.dialogMessage = message;
+    this.dialogCallback = callback;
+    this.showDialog = true;
+  }
+
+  handleDialogConfirm(): void {
+    if (this.dialogCallback) {
+      this.dialogCallback();
+    }
+    this.closeDialog();
+  }
+
+  handleDialogCancel(): void {
+    this.closeDialog();
+  }
+
+  closeDialog(): void {
+    this.showDialog = false;
+    this.dialogCallback = null;
   }
 
   formatFileSize(bytes: number): string {
