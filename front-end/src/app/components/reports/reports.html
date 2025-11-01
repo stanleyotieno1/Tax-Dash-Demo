@@ -1,0 +1,490 @@
+<div class="reports-container">
+  <!-- Header Section -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Reports & Archives</h1>
+      <p class="subtitle">Access and manage all your generated tax risk analysis reports.</p>
+    </div>
+    
+    <div class="header-actions">
+      <button class="primary-btn" (click)="openGenerateModal()">
+        <i class="fa-solid fa-plus"></i>
+        Generate New Report
+      </button>
+      <button class="secondary-btn" (click)="exportAll()">
+        <i class="fa-solid fa-download"></i>
+        Export All
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <div class="filter-item">
+        <label>Date Range</label>
+        <div class="date-range">
+          <input type="date" class="filter-input" [(ngModel)]="filters.startDate">
+          <span class="date-separator">to</span>
+          <input type="date" class="filter-input" [(ngModel)]="filters.endDate">
+        </div>
+      </div>
+      
+      <div class="filter-item">
+        <label>Report Type</label>
+        <select class="filter-select" [(ngModel)]="filters.reportType">
+          <option value="all">All</option>
+          <option value="tax-risk">Tax Risk Summary</option>
+          <option value="vat">VAT</option>
+          <option value="payroll">Payroll</option>
+        </select>
+      </div>
+      
+      <div class="filter-item">
+        <label>Status</label>
+        <select class="filter-select" [(ngModel)]="filters.status">
+          <option value="all">All</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="in-progress">In Progress</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- <div class="search-box">
+      <input 
+        type="text" 
+        placeholder="Search reports..." 
+        class="search-input"
+        [(ngModel)]="searchQuery">
+      <i class="fa-solid fa-search"></i>
+    </div> -->
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon purple">
+        <i class="fa-solid fa-file-lines"></i>
+      </div>
+      <div class="card-content">
+        <h3>Total Reports</h3>
+        <div class="card-value">{{totalReports}}</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon blue">
+        <i class="fa-solid fa-calendar-days"></i>
+      </div>
+      <div class="card-content">
+        <h3>Reports This Month</h3>
+        <div class="card-value">{{reportsThisMonth}}</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon amber">
+        <i class="fa-solid fa-gauge-high"></i>
+      </div>
+      <div class="card-content">
+        <h3>Avg. Risk Level</h3>
+        <div class="card-value">Moderate</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon green">
+        <i class="fa-solid fa-clock"></i>
+      </div>
+      <div class="card-content">
+        <h3>Last Generated</h3>
+        <div class="card-value">2h ago</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reports Table -->
+  <div class="reports-table-container">
+    <div class="table-card">
+      <div class="table-header">
+        <h2>All Reports</h2>
+        <div class="table-controls">
+          <button class="control-btn" (click)="refreshReports()">
+            <i class="fa-solid fa-rotate"></i>
+            Refresh
+          </button>
+          <div class="view-toggle">
+            <button 
+              class="toggle-btn" 
+              [class.active]="viewMode === 'table'"
+              (click)="viewMode = 'table'">
+              <i class="fa-solid fa-list"></i>
+            </button>
+            <button 
+              class="toggle-btn" 
+              [class.active]="viewMode === 'grid'"
+              (click)="viewMode = 'grid'">
+              <i class="fa-solid fa-grip"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div class="table-wrapper" *ngIf="viewMode === 'table' && filteredReports.length > 0">
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>
+                <input type="checkbox" (change)="toggleSelectAll($event)">
+              </th>
+              <th>Report Name</th>
+              <th>Type</th>
+              <th>Period</th>
+              <th>Risk Level</th>
+              <th>Date Generated</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let report of filteredReports" [class.selected]="report.selected">
+              <td>
+                <input type="checkbox" [(ngModel)]="report.selected">
+              </td>
+              <td>
+                <div class="report-name">
+                  <i class="fa-solid fa-file-pdf pdf-icon"></i>
+                  <span>{{report.name}}</span>
+                </div>
+              </td>
+              <td>
+                <span class="report-type">{{report.type}}</span>
+              </td>
+              <td>
+                <span class="period">{{report.period}}</span>
+              </td>
+              <td>
+                <span class="risk-badge" [ngClass]="report.riskLevel">
+                  <span class="badge-dot"></span>
+                  {{report.riskLevel | titlecase}}
+                </span>
+              </td>
+              <td>
+                <span class="date">{{report.dateGenerated}}</span>
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="report.status">
+                  <i [class]="getStatusIcon(report.status)"></i>
+                  {{report.status | titlecase}}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button 
+                    class="action-btn download" 
+                    (click)="downloadReport(report)"
+                    title="Download">
+                    <i class="fa-solid fa-download"></i>
+                  </button>
+                  <button 
+                    class="action-btn view" 
+                    (click)="viewReport(report)"
+                    title="View">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                  <button 
+                    class="action-btn delete" 
+                    (click)="deleteReport(report)"
+                    title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Grid View -->
+      <div class="grid-view" *ngIf="viewMode === 'grid' && filteredReports.length > 0">
+        <div class="report-card" *ngFor="let report of filteredReports">
+          <div class="card-header">
+            <input type="checkbox" [(ngModel)]="report.selected">
+            <span class="status-badge small" [ngClass]="report.status">
+              <i [class]="getStatusIcon(report.status)"></i>
+            </span>
+          </div>
+          
+          <div class="card-icon-wrapper">
+            <i class="fa-solid fa-file-pdf pdf-icon-large"></i>
+          </div>
+          
+          <div class="card-body">
+            <h3>{{report.name}}</h3>
+            <div class="card-meta">
+              <span class="meta-item">
+                <i class="fa-solid fa-tag"></i>
+                {{report.type}}
+              </span>
+              <span class="meta-item">
+                <i class="fa-solid fa-calendar"></i>
+                {{report.period}}
+              </span>
+            </div>
+            
+            <div class="card-risk">
+              <span class="risk-badge" [ngClass]="report.riskLevel">
+                <span class="badge-dot"></span>
+                {{report.riskLevel | titlecase}} Risk
+              </span>
+            </div>
+            
+            <div class="card-date">
+              <i class="fa-solid fa-clock"></i>
+              {{report.dateGenerated}}
+            </div>
+          </div>
+          
+          <div class="card-actions">
+            <button class="card-action-btn primary" (click)="downloadReport(report)">
+              <i class="fa-solid fa-download"></i>
+              Download
+            </button>
+            <button class="card-action-btn secondary" (click)="viewReport(report)">
+              <i class="fa-solid fa-eye"></i>
+              View
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="filteredReports.length === 0">
+        <i class="fa-solid fa-folder-open"></i>
+        <h3>No reports available</h3>
+        <p>Generate your first report to get started.</p>
+        <button class="primary-btn" (click)="openGenerateModal()">
+          <i class="fa-solid fa-plus"></i>
+          Generate New Report
+        </button>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" *ngIf="filteredReports.length > 0">
+        <div class="pagination-info">
+          Showing {{(currentPage - 1) * pageSize + 1}} - {{Math.min(currentPage * pageSize, filteredReports.length)}} of {{filteredReports.length}} reports
+        </div>
+        <div class="pagination-controls">
+          <button 
+            class="page-btn" 
+            [disabled]="currentPage === 1"
+            (click)="previousPage()">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <span class="page-number">{{currentPage}} / {{totalPages}}</span>
+          <button 
+            class="page-btn" 
+            [disabled]="currentPage === totalPages"
+            (click)="nextPage()">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="page-footer">
+    <p>
+      <i class="fa-solid fa-shield-halved"></i>
+      Last updated: 2 hours ago • All reports are securely stored.
+    </p>
+  </div>
+</div>
+
+<!-- Generate Report Modal -->
+<div class="modal-overlay" *ngIf="showGenerateModal" (click)="closeGenerateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Generate New Report</h2>
+      <button class="close-btn" (click)="closeGenerateModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Report Type *</label>
+        <select class="form-input" [(ngModel)]="newReport.type">
+          <option value="">Select report type</option>
+          <option value="tax-risk">Tax Risk Summary</option>
+          <option value="vat">VAT Analysis</option>
+          <option value="payroll">Payroll Compliance</option>
+          <option value="comprehensive">Comprehensive Report</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Period *</label>
+        <select class="form-input" [(ngModel)]="newReport.period">
+          <option value="">Select period</option>
+          <option value="month">Month</option>
+          <option value="quarter">Quarter</option>
+          <option value="year">Year</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" class="form-input" [(ngModel)]="newReport.startDate">
+        </div>
+        <div class="form-group">
+          <label>End Date *</label>
+          <input type="date" class="form-input" [(ngModel)]="newReport.endDate">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Report Name</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          placeholder="e.g., Q4_2025_Risk_Report"
+          [(ngModel)]="newReport.name">
+      </div>
+      
+      <div class="form-group">
+        <label>Optional Notes</label>
+        <textarea 
+          class="form-textarea" 
+          rows="4" 
+          placeholder="Add any specific notes or instructions for this report..."
+          [(ngModel)]="newReport.notes"></textarea>
+      </div>
+      
+      <div class="generation-options">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="newReport.includeCharts">
+          <span>Include visual charts and graphs</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="newReport.includeAI">
+          <span>Include AI-generated insights</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="newReport.emailCopy">
+          <span>Send copy to my email</span>
+        </label>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="secondary-btn" (click)="closeGenerateModal()">Cancel</button>
+      <button class="primary-btn" (click)="generateReport()" [disabled]="isGenerating">
+        <i class="fa-solid fa-spinner fa-spin" *ngIf="isGenerating"></i>
+        <i class="fa-solid fa-file-lines" *ngIf="!isGenerating"></i>
+        {{isGenerating ? 'Generating...' : 'Generate Report'}}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- View Report Modal -->
+<div class="modal-overlay" *ngIf="showViewModal" (click)="closeViewModal()">
+  <div class="modal-content preview-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Report Preview</h2>
+      <button class="close-btn" (click)="closeViewModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body preview-body" *ngIf="selectedReport">
+      <div class="preview-header">
+        <div class="preview-icon">
+          <i class="fa-solid fa-file-pdf"></i>
+        </div>
+        <div class="preview-info">
+          <h3>{{selectedReport.name}}</h3>
+          <p class="preview-meta">
+            Generated on {{selectedReport.dateGenerated}} • {{selectedReport.type}}
+          </p>
+        </div>
+      </div>
+      
+      <div class="preview-stats">
+        <div class="stat-item">
+          <span class="stat-label">Period</span>
+          <span class="stat-value">{{selectedReport.period}}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Risk Level</span>
+          <span class="risk-badge" [ngClass]="selectedReport.riskLevel">
+            <span class="badge-dot"></span>
+            {{selectedReport.riskLevel | titlecase}}
+          </span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Status</span>
+          <span class="status-badge" [ngClass]="selectedReport.status">
+            <i [class]="getStatusIcon(selectedReport.status)"></i>
+            {{selectedReport.status | titlecase}}
+          </span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">File Size</span>
+          <span class="stat-value">2.4 MB</span>
+        </div>
+      </div>
+      
+      <div class="preview-thumbnail">
+        <div class="thumbnail-placeholder">
+          <i class="fa-solid fa-file-pdf"></i>
+          <p>PDF Report Preview</p>
+        </div>
+      </div>
+      
+      <div class="preview-summary">
+        <h4>Report Summary</h4>
+        <ul>
+          <li><i class="fa-solid fa-check"></i> Comprehensive risk analysis completed</li>
+          <li><i class="fa-solid fa-check"></i> All financial metrics analyzed</li>
+          <li><i class="fa-solid fa-check"></i> AI insights included</li>
+          <li><i class="fa-solid fa-check"></i> Recommendations provided</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="secondary-btn" (click)="closeViewModal()">Close</button>
+      <button class="tertiary-btn" (click)="regenerateReport(selectedReport)">
+        <i class="fa-solid fa-rotate"></i>
+        Re-generate
+      </button>
+      <button class="primary-btn" (click)="downloadReport(selectedReport!)">
+        <i class="fa-solid fa-download"></i>
+        Download PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Download Progress Toast -->
+<div class="download-toast" *ngIf="showDownloadProgress">
+  <div class="toast-content">
+    <div class="toast-icon">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+    </div>
+    <div class="toast-info">
+      <h4>Downloading Report</h4>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="downloadProgress"></div>
+      </div>
+      <p>{{downloadProgress}}% complete</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,155 @@
+<div class="sign-up">
+  <div class="left-side">
+    <img src="assets/ad6.png" alt="advert" class="left-side-img" />
+  </div>
+
+  <div class="right-side">
+    <div class="form-content-wrapper">
+      <div class="logo-container">
+        <img src="assets/logo1.png" alt="logo" class="logo1" />
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="line" [style.width]="progressWidth"></div>
+          <div class="dot" [class.active]="step >= 1"></div>
+          <div class="dot middle" [class.active]="step >= 2"></div>
+          <div class="dot end" [class.active]="step >= 3"></div>
+        </div>
+      </div>
+
+      <!-- Step 1: Company Information -->
+      <form *ngIf="step === 1" [formGroup]="companyForm" (ngSubmit)="goToCredentials()">
+        <div class="form-group">
+          <label for="company">Company Name</label>
+          <input id="company" type="text" formControlName="companyName" placeholder="eg ABC limited company">
+        </div>
+
+        <div class="form-group">
+          <label for="kra">KRA PIN</label>
+          <input id="kra" type="text" formControlName="kraPin" placeholder="eg A012345678Z">
+          <div class="error-message" *ngIf="kraPin?.invalid && (kraPin?.touched || kraPin?.dirty)">
+            <span *ngIf="kraPin?.errors?.['kraPin']?.hasSymbol">
+              {{ kraPin?.errors?.['kraPin']?.hasSymbol?.message }}
+            </span>
+            <span *ngIf="kraPin?.errors?.['kraPin']?.hasLetter">
+              {{ kraPin?.errors?.['kraPin']?.hasLetter?.message }}
+            </span>
+            <span *ngIf="kraPin?.errors?.['kraPin']?.minLength">
+              {{ kraPin?.errors?.['kraPin']?.minLength?.message }}
+            </span>
+            <span *ngIf="kraPin?.errors?.['required']">
+              KRA pin is required.
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <div class="phone-input-container">
+            <span class="country-code-flag">
+              <span class="flag-icon">🇰🇪</span>
+              +254
+            </span>
+            <input id="phone" type="tel" formControlName="phone" placeholder="712345678" maxlength="9">
+          </div>
+          <div class="error-message" *ngIf="phone?.invalid && (phone?.touched || phone?.dirty)">
+            <span *ngIf="phone?.errors?.['phone']">
+              {{ phone?.errors?.['phone']?.message }}
+            </span>
+            <span *ngIf="phone?.errors?.['required']">
+            </span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" [disabled]="companyForm.invalid">Next</button>
+        </div>
+
+        <div class="already-have-account">
+          <span>Already have an account?</span>
+          <a class="login-link" routerLink="/log-in">Log in</a>
+        </div>
+      </form>
+
+      <!-- Step 2: Credentials -->
+      <form *ngIf="step === 2" [formGroup]="credentialsForm" (ngSubmit)="submitAll()">
+        <!-- Error message display -->
+        <div *ngIf="errorMessage" class="error-banner">
+          {{ errorMessage }}
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" formControlName="email" placeholder="email@example.com"/>
+          <div class="error-message" *ngIf="email?.invalid && (email?.touched || email?.dirty)">
+            <span *ngIf="email?.errors?.['email']">
+              {{ email?.errors?.['email']?.message }}
+            </span>
+            <span *ngIf="email?.errors?.['required']">
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group password-container">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="!ABC@limited#234"/>
+          <span class="password-toggle" (click)="togglePasswordVisibility()">
+            <i class="fas" [ngClass]="{'fa-eye': !showPassword, 'fa-eye-slash': showPassword}"></i>
+          </span>
+          <div class="error-message" *ngIf="password?.invalid && (password?.touched || password?.dirty)">
+            <span *ngIf="password?.errors?.['password']?.minLength">
+              {{ password?.errors?.['password']?.minLength?.message }}
+            </span>
+            <span *ngIf="password?.errors?.['password']?.hasCapital">
+              {{ password?.errors?.['password']?.hasCapital?.message }}
+            </span>
+            <span *ngIf="password?.errors?.['password']?.hasLowercase">
+              {{ password?.errors?.['password']?.hasLowercase?.message }}
+            </span>
+            <span *ngIf="password?.errors?.['password']?.hasNumber">
+              {{ password?.errors?.['password']?.hasNumber?.message }}
+            </span>
+            <span *ngIf="password?.errors?.['password']?.hasSymbol">
+              {{ password?.errors?.['password']?.hasSymbol?.message }}
+            </span>
+            <span *ngIf="password?.errors?.['required']">
+              Password is required.
+            </span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" (click)="backToCompany()" [disabled]="isLoading">Back</button>
+          <button type="submit" [disabled]="credentialsForm.invalid || isLoading">
+            <span *ngIf="isLoading">Creating account...</span>
+            <span *ngIf="!isLoading">Sign up</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Success message -->
+      <div *ngIf="step === 3 && submitted" class="success-screen">
+        <div class="success-icon">✅</div>
+        <h2>Registration Successful!</h2>
+        <p>Your account has been created successfully.</p>
+        <p><strong>Important:</strong> Please check your email and click the verification link to activate your account.</p>
+        <div class="next-steps">
+          <p>What happens next?</p>
+          <ul>
+            <li>Check your email inbox (and spam folder)</li>
+            <li>Click the verification link in the email</li>
+            <li>Once verified, you can log in to your account</li>
+          </ul>
+        </div>
+        <div class="actions">
+          <button type="button" routerLink="/log-in" class="login-button">Go to Login</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

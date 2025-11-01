@@ -1,0 +1,585 @@
+// Variables
+$primary-color: #6C5CE7;
+$secondary-color: #A29BFE;
+$accent-pink: #FD79A8;
+$accent-green: #00B894;
+$bg-light: #F8F9FC;
+$bg-white: #FFFFFF;
+$text-dark: #2D3436;
+$text-gray: #636E72;
+$border-color: #E8EBF0;
+$card-shadow: 0 4px 20px rgba(108, 92, 231, 0.08);
+$hover-shadow: 0 8px 30px rgba(108, 92, 231, 0.12);
+$border-radius-sm: 10px;
+$border-radius-md: 16px;
+$border-radius-lg: 20px;
+$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Dashboard Content
+.dashboard-content {
+  .content-header {
+    margin-bottom: 28px;
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: $text-dark;
+      letter-spacing: -0.5px;
+    }
+  }
+}
+
+// Dashboard Grid
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+// Card Base
+.card {
+  background: $bg-white;
+  border-radius: $border-radius-lg;
+  padding: 24px;
+  box-shadow: $card-shadow;
+  transition: $transition;
+  
+  &:hover {
+    box-shadow: $hover-shadow;
+    transform: translateY(-2px);
+  }
+
+  .card-header {
+    @include flex-between;
+    margin-bottom: 20px;
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    .icon-more {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: $text-gray;
+      padding: 4px;
+      transition: $transition;
+      font-size: 16px;
+
+      &:hover {
+        color: $primary-color;
+      }
+    }
+  }
+}
+
+// Risk Card
+.card.risk-card {
+  grid-column: span 1;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    filter: blur(40px);
+  }
+
+  .card-gradient {
+    padding: 28px 24px;
+    color: white;
+    position: relative;
+    z-index: 1;
+
+    .card-header-inline {
+      @include flex-between;
+      margin-bottom: 32px;
+
+      .card-badge {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      i {
+        cursor: pointer;
+        opacity: 0.8;
+        transition: $transition;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+
+    .risk-score {
+      h2 {
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        opacity: 0.95;
+        letter-spacing: 0.3px;
+      }
+
+      .score-value {
+        font-size: 64px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 10px;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .score-label {
+        font-size: 14px;
+        opacity: 0.85;
+        font-weight: 400;
+      }
+    }
+  }
+}
+
+// Chart Card
+.card.chart-card {
+  grid-column: span 1;
+
+  .card-header {
+    .chart-toggle {
+      display: flex;
+      gap: 6px;
+
+      button {
+        padding: 6px 16px;
+        border: 1px solid $border-color;
+        background: transparent;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: $transition;
+        color: $text-gray;
+
+        &:hover {
+          border-color: $primary-color;
+          color: $primary-color;
+        }
+
+        &.active {
+          background: $primary-color;
+          color: white;
+          border-color: $primary-color;
+          box-shadow: 0 2px 8px rgba(108, 92, 231, 0.25);
+        }
+      }
+    }
+  }
+
+  .chart-container {
+    height: 180px;
+    position: relative;
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  }
+}
+
+// Profile Card
+.card.profile-card {
+  grid-column: span 1;
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+
+    .profile-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid $bg-light;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .profile-info {
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: $text-dark;
+      }
+    }
+  }
+
+  .risk-trend {
+    position: relative;
+    height: 80px;
+    margin-bottom: 20px;
+    background: $bg-light;
+    border-radius: $border-radius-md;
+    padding: 16px;
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .trend-badge {
+      position: absolute;
+      top: 50%;
+      right: 16px;
+      transform: translateY(-50%);
+      background: $accent-pink;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(253, 121, 168, 0.3);
+    }
+  }
+
+  .total-risk {
+    @include flex-between;
+    padding-top: 18px;
+    border-top: 1px solid $border-color;
+
+    span {
+      color: $text-gray;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: $text-dark;
+    }
+  }
+}
+
+// Stats Card
+.card.stats-card {
+  grid-column: span 2;
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px;
+      background: $bg-light;
+      border-radius: $border-radius-md;
+      transition: $transition;
+      cursor: pointer;
+
+      &:hover {
+        background: linear-gradient(135deg, rgba(108, 92, 231, 0.06) 0%, rgba(162, 155, 254, 0.06) 100%);
+        transform: translateY(-2px);
+      }
+
+      i {
+        font-size: 24px;
+        color: $primary-color;
+        width: 32px;
+        height: 32px;
+        @include flex-center;
+        background: rgba(108, 92, 231, 0.1);
+        border-radius: 10px;
+      }
+
+      .stat-info {
+        p {
+          font-size: 13px;
+          color: $text-gray;
+          margin-bottom: 6px;
+          font-weight: 500;
+        }
+
+        h4 {
+          font-size: 18px;
+          font-weight: 600;
+          color: $text-dark;
+        }
+      }
+    }
+  }
+}
+
+// Efficiency Card
+.card.efficiency-card {
+  grid-column: span 1;
+
+  .efficiency-chart {
+    @include flex-center;
+    margin: 28px 0;
+
+    .circular-progress {
+      position: relative;
+      width: 180px;
+      height: 180px;
+
+      svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+      }
+
+      .progress-bg {
+        fill: none;
+        stroke: $bg-light;
+        stroke-width: 14;
+      }
+
+      .progress-bar {
+        fill: none;
+        stroke: $primary-color;
+        stroke-width: 14;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease;
+      }
+
+      .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+
+        h2 {
+          font-size: 28px;
+          font-weight: 700;
+          margin-bottom: 8px;
+          color: $text-dark;
+        }
+
+        .badge-small {
+          background: $primary-color;
+          color: white;
+          padding: 4px 14px;
+          border-radius: 14px;
+          font-size: 11px;
+          font-weight: 600;
+          display: inline-block;
+        }
+      }
+    }
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    padding-top: 8px;
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: $text-gray;
+      font-weight: 500;
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+
+        &.actual {
+          background: $primary-color;
+        }
+
+        &.target {
+          background: $bg-light;
+          border: 2px solid $border-color;
+        }
+      }
+    }
+  }
+}
+
+// Activities Card
+.card.activities-card {
+  grid-column: span 2;
+
+  .activities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: $bg-light;
+      border-radius: $border-radius-md;
+      transition: $transition;
+      cursor: pointer;
+
+      &:hover {
+        background: linear-gradient(135deg, rgba(108, 92, 231, 0.04) 0%, rgba(162, 155, 254, 0.04) 100%);
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(108, 92, 231, 0.08);
+      }
+
+      .activity-icon {
+        @include flex-center;
+        min-width: 44px;
+        width: 44px;
+        height: 44px;
+        border-radius: $border-radius-sm;
+        font-size: 18px;
+
+        &.pink {
+          background: rgba(253, 121, 168, 0.12);
+          color: $accent-pink;
+        }
+
+        &.green {
+          background: rgba(0, 184, 148, 0.12);
+          color: $accent-green;
+        }
+
+        &.gray {
+          background: rgba(178, 190, 195, 0.12);
+          color: $text-gray;
+        }
+      }
+
+      .activity-info {
+        flex: 1;
+
+        p {
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 4px;
+          color: $text-dark;
+        }
+
+        span {
+          font-size: 12px;
+          color: $text-gray;
+          font-weight: 400;
+        }
+      }
+
+      .activity-amount {
+        font-size: 14px;
+        font-weight: 600;
+        color: $text-dark;
+        white-space: nowrap;
+
+        &.positive {
+          color: $accent-green;
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 1600px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+
+    .card.stats-card,
+    .card.activities-card {
+      grid-column: span 2;
+    }
+
+    .card.risk-card,
+    .card.chart-card,
+    .card.profile-card,
+    .card.efficiency-card {
+      grid-column: span 1;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    
+    .card {
+      grid-column: span 1 !important;
+    }
+  }
+
+  .card.stats-card .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    gap: 16px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .content-header h1 {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card.stats-card .stats-grid {
+    gap: 12px;
+  }
+
+  .card.activities-card .activities-list {
+    gap: 10px;
+  }
+
+  .card.activities-card .activity-item {
+    padding: 14px;
+  }
+
+  .card.efficiency-card .circular-progress {
+    width: 150px;
+    height: 150px;
+  }
+}

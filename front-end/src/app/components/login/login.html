@@ -1,0 +1,52 @@
+<div class="sign-up">
+  <div class="left-side">
+    <img src="assets/ad6.png" alt="advert" class="left-side-img" />
+  </div>
+
+  <div class="right-side">
+    <div class="form-content-wrapper">
+      <div class="logo-container">
+        <img src="assets/logo1.png" alt="logo" class="logo1" />
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" formControlName="email" placeholder="email@example.com"/>
+          <div class="error-message" *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.touched || loginForm.get('email')?.dirty)">
+            <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required.</span>
+            <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email address.</span>
+          </div>
+        </div>
+
+        <div class="form-group password-container">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="!ABC@limited#234"/>
+          <span class="password-toggle" (click)="togglePasswordVisibility()">
+            <i class="fas" [ngClass]="{'fa-eye': !showPassword, 'fa-eye-slash': showPassword}"></i>
+          </span>
+          <div class="error-message" *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.touched || loginForm.get('password')?.dirty)">
+            <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required.</span>
+          </div>
+        </div>
+        
+        <div class="actions">
+          <button type="submit" [disabled]="loginForm.invalid">Log in</button>
+        </div>
+      </form>
+      
+      <div *ngIf="loginFailed" class="error-message">
+        Login failed. Please check your credentials.
+      </div>
+
+      <div class="already-have-account">
+        <span>Don't have an account?</span>
+        <a class="login-link" href="/sign-up">Sign up</a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,376 @@
+<div class="risk-analysis-container">
+  <!-- Header Section -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Tax Risk Analysis</h1>
+      <p class="subtitle">Automated insights across your key financial metrics.</p>
+    </div>
+    
+    <div class="filter-bar">
+      <div class="filter-group">
+        <div class="filter-item">
+          <label>Period</label>
+          <select class="filter-select">
+            <option>Month</option>
+            <option>Quarter</option>
+            <option selected>Year</option>
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <label>Currency</label>
+          <select class="filter-select">
+            <option>USD</option>
+            <option selected>KES</option>
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <label>Date Range</label>
+          <input type="date" class="filter-input" value="2024-01-01">
+          <span class="date-separator">to</span>
+          <input type="date" class="filter-input" value="2024-12-31">
+        </div>
+      </div>
+      
+      <button class="download-btn">
+        <i class="fa-solid fa-file-pdf"></i>
+        Download Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Metrics Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card amber">
+      <div class="metric-icon">
+        <i class="fa-solid fa-chart-column"></i>
+      </div>
+      <div class="metric-content">
+        <h3>Turnover Risk</h3>
+        <div class="metric-value">
+          <span class="value">KSh 50.2M</span>
+          <span class="trend up">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            12%
+          </span>
+        </div>
+        <div class="risk-label moderate">
+          <span class="indicator"></span>
+          Moderate Variance
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card green">
+      <div class="metric-icon">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div class="metric-content">
+        <h3>Payroll Consistency</h3>
+        <div class="metric-value">
+          <span class="value">KSh 12.8M</span>
+          <span class="trend stable">
+            <i class="fa-solid fa-minus"></i>
+            0%
+          </span>
+        </div>
+        <div class="risk-label low">
+          <span class="indicator"></span>
+          Stable
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card red">
+      <div class="metric-icon">
+        <i class="fa-solid fa-percent"></i>
+      </div>
+      <div class="metric-content">
+        <h3>VAT Returns</h3>
+        <div class="metric-value">
+          <span class="value">KSh 4.5M</span>
+          <span class="trend down">
+            <i class="fa-solid fa-arrow-trend-down"></i>
+            8%
+          </span>
+        </div>
+        <div class="risk-label high">
+          <span class="indicator"></span>
+          Underreported
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card gray">
+      <div class="metric-icon">
+        <i class="fa-solid fa-receipt"></i>
+      </div>
+      <div class="metric-content">
+        <h3>VAT Refund Claims</h3>
+        <div class="metric-value">
+          <span class="value">KSh 1.2M</span>
+          <span class="trend up">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            5%
+          </span>
+        </div>
+        <div class="risk-label pending">
+          <span class="indicator"></span>
+          Pending Validation
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Section -->
+  <div class="chart-section">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <h2>Financial Risk Trend</h2>
+          <p>Monthly risk index tracking across key metrics</p>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="dot turnover"></span>
+            <span>Turnover</span>
+          </div>
+          <div class="legend-item">
+            <span class="dot payroll"></span>
+            <span>Payroll</span>
+          </div>
+          <div class="legend-item">
+            <span class="dot vat"></span>
+            <span>VAT</span>
+          </div>
+          <div class="legend-item">
+            <span class="dot refunds"></span>
+            <span>Refunds</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="risk-zones">
+        <div class="zone high">High Risk (70-100)</div>
+        <div class="zone medium">Medium Risk (40-69)</div>
+        <div class="zone low">Low Risk (0-39)</div>
+      </div>
+      
+      <div class="chart-container">
+        <canvas id="riskTrendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breakdown Section (Two Columns) -->
+  <div class="breakdown-section">
+    <!-- Left Column: Data Table -->
+    <div class="breakdown-card table-card">
+      <div class="card-header">
+        <h2>Detailed Risk Breakdown</h2>
+        <button class="export-btn">
+          <i class="fa-solid fa-download"></i>
+          Export
+        </button>
+      </div>
+      
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Variance %</th>
+              <th>Category Risk</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="metric-cell">
+                  <i class="fa-solid fa-chart-column" style="color: #FFA502;"></i>
+                  <span>Turnover</span>
+                </div>
+              </td>
+              <td>
+                <span class="variance negative">-12.4%</span>
+              </td>
+              <td>
+                <span class="risk-chip medium">Medium</span>
+              </td>
+              <td>
+                <span class="timestamp">2 hours ago</span>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="metric-cell">
+                  <i class="fa-solid fa-users" style="color: #00B894;"></i>
+                  <span>Payroll</span>
+                </div>
+              </td>
+              <td>
+                <span class="variance positive">+0.3%</span>
+              </td>
+              <td>
+                <span class="risk-chip low">Low</span>
+              </td>
+              <td>
+                <span class="timestamp">1 hour ago</span>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="metric-cell">
+                  <i class="fa-solid fa-percent" style="color: #FF6B6B;"></i>
+                  <span>VAT Returns</span>
+                </div>
+              </td>
+              <td>
+                <span class="variance negative">-18.7%</span>
+              </td>
+              <td>
+                <span class="risk-chip high">High</span>
+              </td>
+              <td>
+                <span class="timestamp">3 hours ago</span>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="metric-cell">
+                  <i class="fa-solid fa-receipt" style="color: #636E72;"></i>
+                  <span>VAT Refunds</span>
+                </div>
+              </td>
+              <td>
+                <span class="variance positive">+8.2%</span>
+              </td>
+              <td>
+                <span class="risk-chip pending">Pending</span>
+              </td>
+              <td>
+                <span class="timestamp">30 mins ago</span>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="metric-cell">
+                  <i class="fa-solid fa-money-bill-trend-up" style="color: #6C5CE7;"></i>
+                  <span>Revenue Recognition</span>
+                </div>
+              </td>
+              <td>
+                <span class="variance positive">+2.1%</span>
+              </td>
+              <td>
+                <span class="risk-chip low">Low</span>
+              </td>
+              <td>
+                <span class="timestamp">5 hours ago</span>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="metric-cell">
+                  <i class="fa-solid fa-file-invoice-dollar" style="color: #A29BFE;"></i>
+                  <span>Expense Claims</span>
+                </div>
+              </td>
+              <td>
+                <span class="variance negative">-5.6%</span>
+              </td>
+              <td>
+                <span class="risk-chip medium">Medium</span>
+              </td>
+              <td>
+                <span class="timestamp">4 hours ago</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right Column: AI Insights -->
+    <div class="breakdown-card insights-card">
+      <div class="card-header">
+        <h2>
+          <i class="fa-solid fa-sparkles ai-icon"></i>
+          AI Observations
+        </h2>
+        <span class="confidence-badge">95% Confidence</span>
+      </div>
+      
+      <div class="insights-content">
+        <div class="insight-item high-priority">
+          <div class="insight-header">
+            <span class="priority-badge critical">Critical</span>
+            <span class="insight-time">Detected 2h ago</span>
+          </div>
+          <h3>VAT Returns Discrepancy</h3>
+          <p>VAT returns show an <strong>18.7% underreporting</strong> compared to expected calculations based on declared turnover. This pattern has persisted for the last 3 months.</p>
+          <div class="insight-action">
+            <button class="action-btn primary">Review Details</button>
+            <button class="action-btn secondary">Dismiss</button>
+          </div>
+        </div>
+
+        <div class="insight-item medium-priority">
+          <div class="insight-header">
+            <span class="priority-badge warning">Warning</span>
+            <span class="insight-time">Detected 3h ago</span>
+          </div>
+          <h3>Turnover Mismatch Detected</h3>
+          <p>Turnover shows a <strong>12% variance</strong> between declared and recorded values for Q3. This could indicate timing differences or classification errors.</p>
+          <div class="insight-action">
+            <button class="action-btn primary">Investigate</button>
+            <button class="action-btn secondary">Mark Reviewed</button>
+          </div>
+        </div>
+
+        <div class="insight-item low-priority">
+          <div class="insight-header">
+            <span class="priority-badge info">Info</span>
+            <span class="insight-time">Detected 5h ago</span>
+          </div>
+          <h3>Increased Refund Activity</h3>
+          <p>VAT refund requests have risen by <strong>8%</strong>, possibly due to input tax accumulation. This trend is normal for businesses with high capital expenditure.</p>
+          <div class="insight-metrics">
+            <div class="mini-metric">
+              <span class="label">Average Claim</span>
+              <span class="value">KSh 240K</span>
+            </div>
+            <div class="mini-metric">
+              <span class="label">Processing Time</span>
+              <span class="value">14 days</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-sparkline">
+          <h4>Risk Score Trend (7 days)</h4>
+          <div class="sparkline-container">
+            <canvas id="sparklineChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Section -->
+  <div class="page-footer">
+    <div class="footer-info">
+      <i class="fa-solid fa-clock"></i>
+      <span>Last analysis: <strong>2 hours ago</strong></span>
+      <span class="separator">•</span>
+      <span>Next scheduled: <strong>Tomorrow at 9:00 AM</strong></span>
+    </div>
+    
+    <button class="generate-report-btn">
+      <i class="fa-solid fa-file-lines"></i>
+      Generate Full Report
+    </button>
+  </div>
+</div>

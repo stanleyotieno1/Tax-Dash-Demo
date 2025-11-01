@@ -1,0 +1,27 @@
+<aside class="sidebar">
+  <div class="logo-container">
+    <img src="assets/logo1.png" alt="TRAC Logo" class="logo">
+  </div>
+
+  <nav class="nav-menu">
+    <a 
+      *ngFor="let item of navItems" 
+      [routerLink]="item.path" 
+      routerLinkActive="active"
+      class="nav-item">
+      <i [class]="item.icon"></i>
+      <span>{{ item.label }}</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="report-card">
+      <div class="report-icon">
+        <i class="fa-solid fa-file-pdf"></i>
+      </div>
+      <h4>Tax Report</h4>
+      <p>All data analyzed</p>
+      <button class="download-btn">Download</button>
+    </div>
+  </div>
+</aside>

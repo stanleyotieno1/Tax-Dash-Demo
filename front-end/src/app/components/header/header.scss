@@ -1,0 +1,124 @@
+$primary-color: #6C5CE7;
+$bg-light: #F8F9FC;
+$bg-white: #FFFFFF;
+$text-dark: #2D3436;
+$text-gray: #636E72;
+$accent-pink: #FD79A8;
+$card-shadow: 0 4px 20px rgba(108, 92, 231, 0.08);
+$border-radius-sm: 10px;
+$border-radius-md: 16px;
+$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  background: $bg-white;
+  padding: 14px 24px;
+  border-radius: $border-radius-md;
+  box-shadow: $card-shadow;
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    max-width: 420px;
+    padding: 8px 16px;
+    background: $bg-light;
+    border-radius: $border-radius-sm;
+    transition: $transition;
+
+    &:focus-within {
+      background: rgba(108, 92, 231, 0.05);
+      box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.1);
+    }
+
+    i {
+      color: $text-gray;
+      font-size: 16px;
+    }
+
+    input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      color: $text-dark;
+      font-weight: 400;
+
+      &::placeholder {
+        color: $text-gray;
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+
+    .icon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border: none;
+      background: $bg-light;
+      border-radius: $border-radius-sm;
+      cursor: pointer;
+      transition: $transition;
+      position: relative;
+      color: $text-gray;
+
+      i {
+        font-size: 16px;
+      }
+
+      &:hover {
+        background: $primary-color;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);
+      }
+
+      &.notification {
+        .badge {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          background: $accent-pink;
+          color: white;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 2px 6px;
+          border-radius: 10px;
+          line-height: 1;
+          min-width: 18px;
+          text-align: center;
+        }
+      }
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .top-header {
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+
+    .search-bar {
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+}

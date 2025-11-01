@@ -1,0 +1,24 @@
+<header class="top-header">
+  <div class="search-bar">
+    <i class="fa-solid fa-search"></i>
+    <input 
+      type="text" 
+      placeholder="Search invoices and reports"
+      (input)="onSearch($event)">
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" (click)="onUpload()">
+      <i class="fa-solid fa-upload"></i>
+    </button>
+    <button class="icon-btn notification" (click)="onNotifications()">
+      <i class="fa-regular fa-bell"></i>
+      <span class="badge" *ngIf="notificationCount > 0">{{ notificationCount }}</span>
+    </button>
+    <button class="icon-btn" (click)="onSettings()">
+      <i class="fa-solid fa-gear"></i>
+    </button>
+    <button class="icon-btn" (click)="onLogout()">
+      <i class="fa-solid fa-right-from-bracket"></i>
+    </button>
+  </div>
+</header>

@@ -1,0 +1,45 @@
+$bg-light: #F8F9FC;
+$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background: $bg-light;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 280px; // Space for fixed sidebar
+  padding: 24px 32px 32px;
+  background: $bg-light;
+  min-height: 100vh;
+  width: calc(100% - 280px); // IMPORTANT: Prevents content from going under sidebar
+  box-sizing: border-box;
+}
+
+.content-wrapper {
+  width: 100%;
+  max-width: 100%;
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .main-content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    padding: 20px 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 16px;
+  }
+  
+  // Hide sidebar on mobile
+  app-sidebar {
+    display: none;
+  }
+}

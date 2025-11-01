@@ -1,0 +1,181 @@
+<div class="upload-container">
+  <div class="upload-header">
+    <h1>Upload Files</h1>
+    <p class="subtitle">Upload documents for analysis</p>
+  </div>
+
+  <div class="upload-content">
+    <!-- Upload Area -->
+    <div class="upload-section">
+      <div 
+        class="upload-dropzone"
+        [class.drag-over]="isDragging"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)">
+        
+        <div class="upload-icon">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        
+        <h3>Drag and drop files here</h3>
+        <p class="or-text">- OR -</p>
+        
+        <button class="browse-btn" (click)="fileInput.click()">
+          <i class="fa-solid fa-folder-open"></i>
+          Browse Files
+        </button>
+        
+        <input 
+          #fileInput
+          type="file" 
+          multiple 
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+          (change)="onFileSelected($event)"
+          style="display: none;">
+      </div>
+
+      <!-- Allowed Formats -->
+      <div class="allowed-formats">
+        <h4>Allowed File Formats:</h4>
+        <div class="format-badges">
+          <span class="format-badge pdf">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+          </span>
+          <span class="format-badge word">
+            <i class="fa-solid fa-file-word"></i> DOC/DOCX
+          </span>
+          <span class="format-badge excel">
+            <i class="fa-solid fa-file-excel"></i> XLS/XLSX
+          </span>
+          <span class="format-badge csv">
+            <i class="fa-solid fa-file-csv"></i> CSV
+          </span>
+        </div>
+        <p class="format-note">
+          <i class="fa-solid fa-circle-info"></i>
+          Maximum file size: 10MB per file
+        </p>
+      </div>
+    </div>
+
+    <!-- Uploaded Files List -->
+    <div class="uploaded-section">
+      <div class="section-header">
+        <h2>Uploaded Files</h2>
+        <span class="file-count" *ngIf="uploadedFiles.length > 0">
+          {{ uploadedFiles.length }} file(s)
+        </span>
+      </div>
+
+      <!-- Files List -->
+      <div class="files-list" *ngIf="uploadedFiles.length > 0; else emptyState">
+        <div 
+          class="file-item" 
+          *ngFor="let file of uploadedFiles; let i = index"
+          [class.uploading]="file.status === 'uploading'"
+          [class.completed]="file.status === 'completed'"
+          [class.failed]="file.status === 'failed'">
+          
+          <div class="file-icon" [ngClass]="getFileIconClass(file.name)">
+            <i [class]="getFileIcon(file.name)"></i>
+          </div>
+
+          <div class="file-details">
+            <div class="file-info">
+              <h4 class="file-name">{{ file.name }}</h4>
+              <span class="file-size">{{ formatFileSize(file.size) }}</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container" *ngIf="file.status === 'uploading'">
+              <div class="progress-bar">
+                <div 
+                  class="progress-fill" 
+                  [style.width.%]="file.progress">
+                </div>
+              </div>
+              <span class="progress-text">{{ file.progress }}%</span>
+            </div>
+
+            <!-- Status Messages -->
+            <div class="file-status" *ngIf="file.status !== 'uploading'">
+              <span class="status-badge" [class]="file.status">
+                <i *ngIf="file.status === 'completed'" class="fa-solid fa-circle-check"></i>
+                <i *ngIf="file.status === 'failed'" class="fa-solid fa-circle-xmark"></i>
+                {{ file.status === 'completed' ? 'Completed' : 'Failed' }}
+              </span>
+              <span class="upload-time" *ngIf="file.status === 'completed'">
+                {{ file.uploadTime }}
+              </span>
+            </div>
+          </div>
+
+          <div class="file-actions">
+            <button 
+              class="action-btn view-btn" 
+              *ngIf="file.status === 'completed'"
+              (click)="viewFile(file)"
+              title="View file">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button 
+              class="action-btn download-btn" 
+              *ngIf="file.status === 'completed'"
+              (click)="downloadFile(file)"
+              title="Download file">
+              <i class="fa-solid fa-download"></i>
+            </button>
+            <button 
+              class="action-btn retry-btn" 
+              *ngIf="file.status === 'failed'"
+              (click)="retryUpload(file)"
+              title="Retry upload">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            <button 
+              class="action-btn delete-btn" 
+              (click)="deleteFile(i)"
+              title="Delete file">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <i class="fa-solid fa-folder-open"></i>
+          <h3>No files uploaded yet</h3>
+          <p>Upload your first file to get started</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Upload Summary -->
+  <div class="upload-summary" *ngIf="uploadedFiles.length > 0">
+    <div class="summary-item">
+      <i class="fa-solid fa-file-circle-check"></i>
+      <div>
+        <span class="summary-label">Successfully Uploaded</span>
+        <span class="summary-value">{{ getCompletedCount() }}</span>
+      </div>
+    </div>
+    <div class="summary-item">
+      <i class="fa-solid fa-clock"></i>
+      <div>
+        <span class="summary-label">In Progress</span>
+        <span class="summary-value">{{ getUploadingCount() }}</span>
+      </div>
+    </div>
+    <div class="summary-item error">
+      <i class="fa-solid fa-file-circle-xmark"></i>
+      <div>
+        <span class="summary-label">Failed</span>
+        <span class="summary-value">{{ getFailedCount() }}</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,158 @@
+<div class="dashboard-content">
+  <div class="content-header">
+    <h1>Overview</h1>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="card risk-card">
+      <div class="card-gradient">
+        <div class="card-header-inline">
+          <span class="card-badge">AI Risk</span>
+          <i class="fa-solid fa-ellipsis"></i>
+        </div>
+        <div class="risk-score">
+          <h2>Tax Risk Score</h2>
+          <div class="score-value">68</div>
+          <p class="score-label">Moderate Risk</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="card-header">
+        <h3>Tax Compliance Trend</h3>
+        <div class="chart-toggle">
+          <button class="active">USD</button>
+          <button>KES</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="complianceChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card profile-card">
+      <div class="profile-header">
+        <img src="assets/default-avator.png" alt="User" class="profile-avatar">
+        <div class="profile-info">
+          <h3>Stan Technologies Ltd</h3>
+        </div>
+      </div>
+      <div class="risk-trend">
+        <canvas id="trendChart"></canvas>
+        <div class="trend-badge">Low</div>
+      </div>
+      <div class="total-risk">
+        <span>Total Risk</span>
+        <h2>15/100</h2>
+      </div>
+    </div>
+
+    <div class="card stats-card">
+      <div class="card-header">
+        <h3>Document Summary</h3>
+        <button class="icon-more"><i class="fa-solid fa-ellipsis"></i></button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <i class="fa-solid fa-file-pdf"></i>
+          <div class="stat-info">
+            <p>Invoices</p>
+            <h4>12 uploaded</h4>
+          </div>
+        </div>
+        <div class="stat-item">
+          <i class="fa-solid fa-file-pdf"></i>
+          <div class="stat-info">
+            <p>Income Statements</p>
+            <h4>4 Analysed</h4>
+          </div>
+        </div>
+        <div class="stat-item">
+          <i class="fa-solid fa-file-pdf"></i>
+          <div class="stat-info">
+            <p>VAT reports</p>
+            <h4>2 pending</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card efficiency-card">
+      <div class="card-header">
+        <h3>Tax Compliance Efficiency</h3>
+      </div>
+      <div class="efficiency-chart">
+        <div class="circular-progress">
+          <svg viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="80" class="progress-bg"></circle>
+            <circle cx="100" cy="100" r="80" class="progress-bar" 
+                    style="stroke-dasharray: 502; stroke-dashoffset: 40.16;"></circle>
+          </svg>
+          <div class="progress-text">
+            <h2>92%</h2>
+            <span class="badge-small">compliant</span>
+          </div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item">
+          <span class="dot actual"></span>
+          <span>Reported</span>
+        </div>
+        <div class="legend-item">
+          <span class="dot target"></span>
+          <span>Expected</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card activities-card">
+      <div class="card-header">
+        <h3>Detected Anomalies</h3>
+      </div>
+      <div class="activities-list">
+        <div class="activity-item">
+          <div class="activity-icon pink">
+            <i class="fa-solid fa-circle-exclamation"></i>
+          </div>
+          <div class="activity-info">
+            <p>Missing VAT entry</p>
+            <span>Invoice #104</span>
+          </div>
+          <span class="activity-amount">Ksh 111,001,200.50</span>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon green">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <div class="activity-info">
+            <p>Inconsistent Income data</p>
+            <span>Q3 Report</span>
+          </div>
+          <span class="activity-amount positive">April 15</span>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon pink">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <div class="activity-info">
+            <p>Upload Data</p>
+            <span>Action Required</span>
+          </div>
+          <span class="activity-amount">Click to</span>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon gray">
+            <i class="fa-solid fa-file-pdf"></i>
+          </div>
+          <div class="activity-info">
+            <p>Tax Reports</p>
+            <span>Generated</span>
+          </div>
+          <span class="activity-amount">Generated</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
