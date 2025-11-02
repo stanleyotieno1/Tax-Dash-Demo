@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, text
 from database import engine, UploadedFile as DBUploadedFile
 from services import extract_from_pdf
 from websocket_manager import manager

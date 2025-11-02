@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import router
-from database import init_db
+from database import init_db, engine, UploadedFile
+from sqlalchemy import text, select
 
 app = FastAPI(title="PDF Extraction Service with Whisperer")
 
@@ -9,7 +10,7 @@ app = FastAPI(title="PDF Extraction Service with Whisperer")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:4200",  # Angular default port
+        "http://localhost:4200",  
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -19,8 +20,14 @@ app.add_middleware(
 # Initialize database on startup
 @app.on_event("startup")
 async def startup_event():
-    init_db()
-    print("✅ Database initialized")
+    """Initialize database on startup"""
+    print("🚀 Starting application...")
+    try:
+        init_db()
+        print("✅ Database initialized successfully")
+    except Exception as e:
+        print(f"❌ Startup failed: {e}")
+        raise
 
 # Include API routes
 app.include_router(router, prefix="/api")
@@ -38,7 +45,32 @@ async def root():
         }
     }
 
+@app.get("/health")
+async def health_check():
+    """Database health check"""
+    # from database import engine, UploadedFile
+    # from sqlalchemy import text, select
+    
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            
+            result = conn.execute(select(UploadedFile)).fetchall()
+            file_count = len(result)
+        
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "file_count": file_count
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level='info')

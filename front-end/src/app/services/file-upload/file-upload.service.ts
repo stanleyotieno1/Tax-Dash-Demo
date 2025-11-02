@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpEvent, HttpEventType } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpClient, HttpEvent, HttpEventType, HttpErrorResponse } from '@angular/common/http';
+import { Observable, Subject, throwError } from 'rxjs';
+import { map, catchError, tap } from 'rxjs/operators';
 
 export interface ExtractedData {
   invoice_number: string | null;
@@ -37,6 +37,9 @@ export class FileUploadService {
   private reconnectDelay = 3000;
 
   constructor(private http: HttpClient) {
+    console.log('🔧 FileUploadService initialized');
+    console.log('📍 API URL:', this.apiUrl);
+    console.log('📍 WebSocket URL:', this.wsUrl);
     this.connectWebSocket();
   }
 
@@ -45,43 +48,49 @@ export class FileUploadService {
    */
   connectWebSocket(): void {
     if (this.websocket?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected');
+      console.log('✅ WebSocket already connected');
       return;
     }
 
-    console.log('🔌 Connecting to WebSocket...');
-    this.websocket = new WebSocket(this.wsUrl);
+    console.log('🔌 Connecting to WebSocket:', this.wsUrl);
+    
+    try {
+      this.websocket = new WebSocket(this.wsUrl);
 
-    this.websocket.onopen = () => {
-      console.log('✅ WebSocket connected');
-      this.reconnectAttempts = 0;
-      
-      // Send ping every 30 seconds to keep connection alive
-      setInterval(() => {
-        if (this.websocket?.readyState === WebSocket.OPEN) {
-          this.websocket.send('ping');
+      this.websocket.onopen = () => {
+        console.log('✅ WebSocket connected successfully');
+        this.reconnectAttempts = 0;
+        
+        // Send ping every 30 seconds to keep connection alive
+        setInterval(() => {
+          if (this.websocket?.readyState === WebSocket.OPEN) {
+            this.websocket.send('ping');
+            console.log('📤 Sent ping to keep connection alive');
+          }
+        }, 30000);
+      };
+
+      this.websocket.onmessage = (event) => {
+        try {
+          const message: WebSocketMessage = JSON.parse(event.data);
+          console.log('📨 WebSocket message received:', message);
+          this.messageSubject.next(message);
+        } catch (error) {
+          console.error('❌ Failed to parse WebSocket message:', error);
         }
-      }, 30000);
-    };
+      };
 
-    this.websocket.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        console.log('📨 WebSocket message:', message);
-        this.messageSubject.next(message);
-      } catch (error) {
-        console.error('Failed to parse WebSocket message:', error);
-      }
-    };
+      this.websocket.onerror = (error) => {
+        console.error('❌ WebSocket error:', error);
+      };
 
-    this.websocket.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
-    };
-
-    this.websocket.onclose = () => {
-      console.log('🔌 WebSocket disconnected');
-      this.attemptReconnect();
-    };
+      this.websocket.onclose = (event) => {
+        console.log('🔌 WebSocket disconnected. Code:', event.code, 'Reason:', event.reason);
+        this.attemptReconnect();
+      };
+    } catch (error) {
+      console.error('❌ Failed to create WebSocket:', error);
+    }
   }
 
   /**
@@ -105,14 +114,18 @@ export class FileUploadService {
    */
   disconnectWebSocket(): void {
     if (this.websocket) {
+      console.log('🔌 Closing WebSocket connection');
       this.websocket.close();
       this.websocket = null;
     }
   }
 
-  // ... (keep all existing HTTP methods: uploadFile, analyzeAllFiles, getAllFiles, etc.)
-  
+  /**
+   * Upload file with progress tracking
+   */
   uploadFile(file: File): Observable<{progress: number, response?: any}> {
+    console.log('📤 Uploading file:', file.name);
+    
     const formData = new FormData();
     formData.append('file', file);
 
@@ -125,24 +138,69 @@ export class FileUploadService {
           const progress = event.total 
             ? Math.round((100 * event.loaded) / event.total)
             : 0;
+          console.log(`📊 Upload progress: ${progress}%`);
           return { progress };
         } else if (event.type === HttpEventType.Response) {
+          console.log('✅ Upload complete:', event.body);
           return { progress: 100, response: event.body };
         }
         return { progress: 0 };
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Upload failed:', error);
+        return throwError(() => error);
       })
     );
   }
 
+  /**
+   * Analyze all pending files
+   */
   analyzeAllFiles(): Observable<any> {
-    return this.http.post(`${this.apiUrl}/analyze-all`, {});
+    console.log('🔍 Requesting analysis for all pending files');
+    
+    return this.http.post(`${this.apiUrl}/analyze-all`, {}).pipe(
+      tap(response => console.log('✅ Analysis request sent:', response)),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Analysis request failed:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
+  /**
+   * Get all files from database
+   */
   getAllFiles(): Observable<{ files: any[] }> {
-    return this.http.get<{ files: any[] }>(`${this.apiUrl}/files`);
+    console.log('📂 Fetching all files from:', `${this.apiUrl}/files`);
+    
+    return this.http.get<{ files: any[] }>(`${this.apiUrl}/files`).pipe(
+      tap(response => console.log('✅ Files fetched:', response.files?.length || 0)),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Failed to fetch files:', error);
+        console.error('Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url
+        });
+        return throwError(() => error);
+      })
+    );
   }
 
+  /**
+   * Delete a file
+   */
   deleteFile(fileId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/files/${fileId}`);
+    console.log('🗑️ Deleting file:', fileId);
+    
+    return this.http.delete(`${this.apiUrl}/files/${fileId}`).pipe(
+      tap(response => console.log('✅ File deleted:', response)),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Delete failed:', error);
+        return throwError(() => error);
+      })
+    );
   }
 }

@@ -43,7 +43,7 @@ amqp:
       all: true
 
 email:
-  owner: 
+  owner: 175dollarsnow@gmail.com
 
 jwt:
   secret: 0e7d5a5f9b1c7a8b3e2d6f0c4a9b8e1f5d7c3b9e8f1a0d2c6b4e8f9c1a0b3d5e
